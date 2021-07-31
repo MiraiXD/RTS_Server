@@ -1,0 +1,59 @@
+{
+    "RunContainer": false,
+    "OutputFolder": "",
+    "NumHeartBeatsForActivateResponse": 3,
+    "NumHeartBeatsForTerminateResponse": 60,
+    "AgentListeningPort": 56001,
+   "AssetDetails": [
+        {
+            "MountPath": "C:\\Assets",
+            "LocalFilePath": "C:\\UnityProjects\\RTS_Server\\DarkRift Server (.NET Framework 4.0)\\DarkRift.Server.Console.zip"
+        }
+],
+    "GameCertificateDetails": [],
+   "PortMappingsList": [
+        [
+            {
+                "NodePort": 56100,
+                "GamePort": {
+                    "Name": "game_port_tcp",
+                    "Number": 4296,
+                    "Protocol": "TCP"
+                }
+            },
+            {
+                "NodePort": 56100,
+                "GamePort": {
+                    "Name": "game_port_udp",
+                    "Number": 4296,
+                    "Protocol": "UDP"
+                }
+            }
+        ]
+],
+   "ProcessStartParameters": {
+        "StartGameCommand": "DarkRift.Server.Console.exe"
+},
+    "ContainerStartParameters": {
+        "StartGameCommand": "C:\\Assets\\<your_game_server_exe>",
+        "ResourceLimits": {
+            "Cpus": 0,
+            "MemoryGib": 0
+        },
+        "ImageDetails": {
+            "Registry": "mcr.microsoft.com",
+            "ImageName": "playfab/multiplayer",
+            "ImageTag": "wsc-10.0.17763.973.1",
+            "Username": "",
+            "Password": ""
+        }
+    },
+    "SessionConfig": {
+        "SessionId": "ba67d671-512a-4e7d-a38c-2329ce181946",
+        "SessionCookie": null,
+        "InitialPlayers": [ "Player1", "Player2" ]
+    },
+    "TitleId": "",
+    "BuildId": "00000000-0000-0000-0000-000000000000",
+    "Region": "WestUs"
+}

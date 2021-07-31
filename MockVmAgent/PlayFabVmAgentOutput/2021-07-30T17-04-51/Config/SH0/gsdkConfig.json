@@ -1,0 +1,29 @@
+{
+  "heartbeatEndpoint": "127.0.0.1:56001",
+  "sessionHostId": "21f9910a-dcce-4c9e-a649-6d3b97bfcfa2",
+  "vmId": "xcloudwusu4uyz5daouzl:WestUs:27656def-133d-45c1-98c3-d3ef9fce93ea:tvmps_fa5984dbd89f4a088ff96b9da4d8f74aa7d58e89802f4f1698a9124d78153d50_d",
+  "logFolder": "C:\\Users\\Lil K\\Downloads\\MockVmAgent\\PlayFabVmAgentOutput\\2021-07-30T17-04-51\\GameLogs\\21f9910a-dcce-4c9e-a649-6d3b97bfcfa2",
+  "certificateFolder": "C:\\GameCertificates",
+  "sharedContentFolder": "C:\\GameSharedContent",
+  "gamePorts": {
+    "game_port_tcp": "56100",
+    "game_port_udp": "56100"
+  },
+  "publicIpV4Address": "127.0.0.1",
+  "gameServerConnectionInfo": {
+    "publicIpV4Adress": "127.0.0.1",
+    "gamePortsConfiguration": [
+      {
+        "name": "game_port_tcp",
+        "serverListeningPort": 56100,
+        "clientConnectionPort": 56100
+      },
+      {
+        "name": "game_port_udp",
+        "serverListeningPort": 56100,
+        "clientConnectionPort": 56100
+      }
+    ]
+  },
+  "fullyQualifiedDomainName": "localhost"
+}

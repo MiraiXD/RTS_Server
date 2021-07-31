@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="DarkRift">
+      <HintPath>..\DarkRift Server (.NET Framework 4.0)\Lib\DarkRift.dll</HintPath>
+    </Reference>
+    <Reference Include="DarkRift.Server">
+      <HintPath>..\DarkRift Server (.NET Framework 4.0)\Lib\DarkRift.Server.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Playfab.Gaming.GSDK.CSharp">
+      <HintPath>..\com.playfab.csharpgsdk\0.11.210519\lib\netstandard2.0\Microsoft.Playfab.Gaming.GSDK.CSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
