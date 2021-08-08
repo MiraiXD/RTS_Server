@@ -20,10 +20,10 @@ namespace MultiplayerPlugin
         bool sessionIdAssigned;
         int maxPlayers = 3;
         string map = "Default_4";
-        bool update;
+
         public NetworkManager(PluginLoadData pluginLoadData) : base(pluginLoadData)
         {
-             players = new Dictionary<IClient, Entities.Player>();
+            players = new Dictionary<IClient, Entities.Player>();
             ClientManager.ClientConnected += ClientConnected;
             ClientManager.ClientDisconnected += ClientDisconnected;
 
@@ -31,29 +31,88 @@ namespace MultiplayerPlugin
             GameserverSDK.RegisterHealthCallback(OnHealthCheck);
             sessionIdAssigned = false;
 
-            update = false;
-
             clientMessage_Actions = new Dictionary<ushort, Action<Message, object, MessageReceivedEventArgs>>();
             clientMessage_Actions.Add(Messages.Player.Hello.Tag, OnPlayerHelloMessage);
-            clientMessage_Actions.Add(Messages.Player.ReadyToStartGame.Tag, OnPlayerReadyToStartGameMessage);            
+            clientMessage_Actions.Add(Messages.Player.ReadyToStartGame.Tag, OnPlayerReadyToStartGameMessage);
 
             // Connect to PlayFab agent
             GameserverSDK.Start();
             if (GameserverSDK.ReadyForPlayers())
             {
                 // returns true on allocation call, player about to connect
-            }            
+            }
             else
             {
                 // returns false when server is being terminated
             }
         }
 
-        private void OnPlayerReadyToStartGameMessage(Message arg1, object arg2, MessageReceivedEventArgs arg3)
+        private void OnPlayerReadyToStartGameMessage(Message message, object sender, MessageReceivedEventArgs e)
         {
-            throw new NotImplementedException();
-        }
+            players[e.Client].isReady = true;
 
+            bool allReady = true;
+            foreach (IClient client in ClientManager.GetAllClients())
+            {
+                if (!players[client].isReady)
+                {
+                    allReady = false;
+                    break;
+                }
+            }
+
+            if (allReady)
+            {
+                using (DarkRiftWriter writer = DarkRiftWriter.Create())
+                {
+                    writer.Write(new Messages.Server.StartGame());
+                    using (Message m = Message.Create(Messages.Server.StartGame.Tag, writer))
+                    {
+                        foreach (IClient client in ClientManager.GetAllClients())
+                        {
+                            client.SendMessage(m, SendMode.Reliable);
+                        }
+                    }
+                }
+                StartUpdating();
+            }
+        }
+        private Thread worldUpdateThread;
+        private Messages.Server.WorldUpdate worldUpdateMessage;
+        float updateRate = 0.02f;
+        bool updateWorld = false;
+        void StartUpdating()
+        {
+            worldUpdateMessage = new Messages.Server.WorldUpdate();
+            worldUpdateMessage.x = 250f;
+            worldUpdateMessage.z = 250f;
+            updateWorld = true;
+            worldUpdateThread = new Thread(() =>
+            {
+                while (updateWorld)
+                {
+                    Update();
+                    Thread.Sleep(20);
+
+                    using (DarkRiftWriter writer = DarkRiftWriter.Create())
+                    {
+                        writer.Write(worldUpdateMessage);
+                        using (Message message = Message.Create(Messages.Server.WorldUpdate.Tag, writer))
+                        {
+                            foreach (IClient client in ClientManager.GetAllClients())
+                            {
+                                client.SendMessage(message, SendMode.Unreliable);
+                            }
+                        }
+                    }
+                }
+            });
+            worldUpdateThread.Start();
+        }
+        void Update()
+        {
+            worldUpdateMessage.x += 2f * updateRate;
+        }
         void OnShutdown()
         {
             Environment.Exit(1);
@@ -84,7 +143,7 @@ namespace MultiplayerPlugin
                     startDateTime = DateTime.Now;
                     sessionIdAssigned = true;
                 }
-            }            
+            }
             // If server has been awake for over 10 mins, and no players connected, and the PlayFab server is not in standby (no session id assigned): begin shutdown
             if (awakeTime > 100f && players.Count <= 0 && sessionIdAssigned)
             {
@@ -129,8 +188,8 @@ namespace MultiplayerPlugin
         }
 
         void ClientConnected(object sender, ClientConnectedEventArgs e)
-        {            
-            e.Client.MessageReceived += OnMessageReceived;          
+        {
+            e.Client.MessageReceived += OnMessageReceived;
         }
         void OnMessageReceived(object sender, MessageReceivedEventArgs e)
         {
@@ -147,14 +206,14 @@ namespace MultiplayerPlugin
             }
         }
         void OnPlayerHelloMessage(Message playerMessage, object sender, MessageReceivedEventArgs e)
-        {     
+        {
             using (DarkRiftReader reader = playerMessage.GetReader())
             {
                 Messages.Player.Hello helloMessage = reader.ReadSerializable<Messages.Player.Hello>();
                 string playerName = helloMessage.playerName;
 
                 Entities.Player newPlayer = new Entities.Player(e.Client.ID, playerName);
-                players.Add(e.Client, newPlayer);                
+                players.Add(e.Client, newPlayer);
 
                 using (DarkRiftWriter writer = DarkRiftWriter.Create())
                 {
@@ -163,34 +222,34 @@ namespace MultiplayerPlugin
                     message.connectedPlayers_Size = players.Count;
                     message.connectedPlayers = new Entities.Player[message.connectedPlayers_Size];
                     int i = 0;
-                    foreach(var p in players.Values)
+                    foreach (var p in players.Values)
                     {
                         message.connectedPlayers[i++] = p;
                     }
 
                     writer.Write(message);
-                    using(Message serverMessage = Message.Create(Messages.Server.ConnectedPlayers.Tag, writer))
+                    using (Message serverMessage = Message.Create(Messages.Server.ConnectedPlayers.Tag, writer))
                     {
-                        foreach(IClient client in ClientManager.GetAllClients())
+                        foreach (IClient client in ClientManager.GetAllClients())
                         {
                             client.SendMessage(serverMessage, SendMode.Reliable);
                         }
-                    }                    
+                    }
                 }
-                using(DarkRiftWriter writer = DarkRiftWriter.Create())
+                using (DarkRiftWriter writer = DarkRiftWriter.Create())
                 {
                     Messages.Server.LoadMap message = new Messages.Server.LoadMap();
                     message.mapName = map;
                     writer.Write(message);
-                    using(Message serverMessage = Message.Create(Messages.Server.LoadMap.Tag, writer))
+                    using (Message serverMessage = Message.Create(Messages.Server.LoadMap.Tag, writer))
                     {
                         e.Client.SendMessage(serverMessage, SendMode.Reliable);
                     }
                 }
-            }            
+            }
 
-            
-            UpdatePlayFabPlayers();           
+
+            UpdatePlayFabPlayers();
         }
         //void OnPlayerInformationMessage(object sender, MessageReceivedEventArgs e, Message message)
         //{

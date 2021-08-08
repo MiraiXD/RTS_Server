@@ -1,20 +1,6 @@
 ﻿using DarkRift;
-using System.Collections.Generic;
-//public class Tags
-//{
-//    public const ushort PlayerConnectTag = 1000;
-//    public const ushort PlayerDisconnectTag = 1001;
-//    public class Player
-//    {
-//        public const ushort Hello = 1002;
-//    }
-//    public class Server
-//    {
-//        public const ushort ConnectedPlayers = 1100;
-//        public const ushort LoadMap = 1101;
-//    }
+using System;
 
-//}
 public class Messages
 {
     public class Player
@@ -43,6 +29,28 @@ public class Messages
     }
     public class Server
     {
+        public class WorldUpdate : IDarkRiftSerializable
+        {
+            public const ushort Tag = 1105;
+            public float x, z;            
+            public void Deserialize(DeserializeEvent e)
+            {
+                x = e.Reader.ReadSingle();
+                z = e.Reader.ReadSingle();
+            }
+
+            public void Serialize(SerializeEvent e)
+            {
+                e.Writer.Write(x);
+                e.Writer.Write(z);
+            }
+        }
+        public class StartGame : IDarkRiftSerializable
+        {
+            public const ushort Tag = 1104;
+            public void Deserialize(DeserializeEvent e) { }
+            public void Serialize(SerializeEvent e) { }
+        }
         public class LoadMap : IDarkRiftSerializable
         {
             public const ushort Tag = 1103;
@@ -99,27 +107,6 @@ public class Messages
                 e.Writer.Write(ID);
             }
         }
-        public class Update : IDarkRiftSerializable
-        {
-            public const ushort Tag = 1102;
-            public string m1;
-            public string m2;
-            public string m3;
-            public void Deserialize(DeserializeEvent e)
-            {
-                m1 = e.Reader.ReadString();
-                m2 = e.Reader.ReadString();
-                m3 = e.Reader.ReadString();
-            }
-
-            public void Serialize(SerializeEvent e)
-            {
-                e.Writer.Write(m1);
-                e.Writer.Write(m2);
-                e.Writer.Write(m3);
-            }
-        }
-
     }
 
 }
@@ -129,7 +116,8 @@ public class Entities
     {
         public ushort ID;
         public string playerName;
-        //public bool isReady { get; set; }
+        public bool isReady;
+
         public Player() { }
         public Player(ushort ID, string playerName)
         {
