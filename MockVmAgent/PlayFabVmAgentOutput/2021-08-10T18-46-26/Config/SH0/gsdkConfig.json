@@ -1,0 +1,29 @@
+{
+  "heartbeatEndpoint": "127.0.0.1:56001",
+  "sessionHostId": "cd640c2d-4d96-40a0-b62e-88a393320a74",
+  "vmId": "xcloudwusu4uyz5daouzl:WestUs:f5837326-e4dc-42a7-978e-0fa0cca0beb2:tvmps_389bb93ee08c451b88eafe0b9b0f9302bac8912872804f44a8d972a86297941b_d",
+  "logFolder": "C:\\UnityProjects\\RTS_Server\\MockVmAgent\\PlayFabVmAgentOutput\\2021-08-10T18-46-26\\GameLogs\\cd640c2d-4d96-40a0-b62e-88a393320a74",
+  "certificateFolder": "C:\\GameCertificates",
+  "sharedContentFolder": "C:\\GameSharedContent",
+  "gamePorts": {
+    "game_port_tcp": "56100",
+    "game_port_udp": "56100"
+  },
+  "publicIpV4Address": "127.0.0.1",
+  "gameServerConnectionInfo": {
+    "publicIpV4Adress": "127.0.0.1",
+    "gamePortsConfiguration": [
+      {
+        "name": "game_port_tcp",
+        "serverListeningPort": 56100,
+        "clientConnectionPort": 56100
+      },
+      {
+        "name": "game_port_udp",
+        "serverListeningPort": 56100,
+        "clientConnectionPort": 56100
+      }
+    ]
+  },
+  "fullyQualifiedDomainName": "localhost"
+}

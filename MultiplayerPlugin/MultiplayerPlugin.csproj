@@ -14,6 +14,9 @@
     <Reference Include="Microsoft.Playfab.Gaming.GSDK.CSharp">
       <HintPath>..\com.playfab.csharpgsdk\0.11.210519\lib\netstandard2.0\Microsoft.Playfab.Gaming.GSDK.CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Roy-T.AStar">
+      <HintPath>..\Roy-T.AStar\bin\Debug\netstandard2.0\Roy-T.AStar.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@ using System;
 
 public class Messages
 {
-    public class Player
+    public class Client
     {
         public class Hello : IDarkRiftSerializable
         {
@@ -26,23 +26,41 @@ public class Messages
             public void Deserialize(DeserializeEvent e) { }
             public void Serialize(SerializeEvent e) { }
         }
+        public class SpawnUnit : IDarkRiftSerializable
+        {
+            public const ushort Tag = 1004;
+            public Entities.BattleUnitModel.UnitType unitType;
+            public void Deserialize(DeserializeEvent e)
+            {
+                unitType = (Entities.BattleUnitModel.UnitType) e.Reader.ReadUInt16();
+            }
+
+            public void Serialize(SerializeEvent e)
+            {
+                e.Writer.Write((ushort)unitType);
+            }
+        }
+
     }
     public class Server
     {
         public class WorldUpdate : IDarkRiftSerializable
         {
             public const ushort Tag = 1105;
+            public double timeSinceStartup;            
             public float x, z;            
             public void Deserialize(DeserializeEvent e)
             {
+                timeSinceStartup = e.Reader.ReadDouble();                
                 x = e.Reader.ReadSingle();
-                z = e.Reader.ReadSingle();
+                z = e.Reader.ReadSingle();                
             }
 
             public void Serialize(SerializeEvent e)
             {
+                e.Writer.Write(timeSinceStartup);                
                 e.Writer.Write(x);
-                e.Writer.Write(z);
+                e.Writer.Write(z);                
             }
         }
         public class StartGame : IDarkRiftSerializable
@@ -70,15 +88,15 @@ public class Messages
             public const ushort Tag = 1100;
             public int maxPlayers;
             public int connectedPlayers_Size;
-            public Entities.Player[] connectedPlayers;
+            public Entities.PlayerNetworkModel[] connectedPlayers;
             public void Deserialize(DeserializeEvent e)
             {
                 maxPlayers = e.Reader.ReadInt32();
                 connectedPlayers_Size = e.Reader.ReadInt32();
-                connectedPlayers = new Entities.Player[connectedPlayers_Size];
+                connectedPlayers = new Entities.PlayerNetworkModel[connectedPlayers_Size];
                 for (int i = 0; i < connectedPlayers_Size; i++)
                 {
-                    var player = e.Reader.ReadSerializable<Entities.Player>();
+                    var player = e.Reader.ReadSerializable<Entities.PlayerNetworkModel>();
                     connectedPlayers[i] = player;
                 }
             }
@@ -87,9 +105,9 @@ public class Messages
             {
                 e.Writer.Write(maxPlayers);
                 e.Writer.Write(connectedPlayers_Size);
-                foreach (Entities.Player p in connectedPlayers)
+                foreach (Entities.PlayerNetworkModel p in connectedPlayers)
                 {
-                    e.Writer.Write<Entities.Player>(p);
+                    e.Writer.Write<Entities.PlayerNetworkModel>(p);
                 }
             }
         }
@@ -107,33 +125,120 @@ public class Messages
                 e.Writer.Write(ID);
             }
         }
+        public class SpawnUnit : IDarkRiftSerializable
+        {
+            public const ushort Tag = 1106;
+            public NetworkIdentity owningPlayerID;
+            public Entities.BattleUnitModel unitModel;
+            public NetworkIdentity unitID;
+            public void Deserialize(DeserializeEvent e)
+            {
+                owningPlayerID = new NetworkIdentity();
+                owningPlayerID.Deserialize(e);
+                unitModel = new Entities.BattleUnitModel();
+                unitModel.Deserialize(e);
+                unitID = new NetworkIdentity();
+                unitID.Deserialize(e);
+            }
+
+            public void Serialize(SerializeEvent e)
+            {
+                e.Writer.Write(owningPlayerID);
+                e.Writer.Write(unitModel);
+                e.Writer.Write(unitID);
+            }
+        }
     }
 
 }
 public class Entities
 {
-    public class Player : IDarkRiftSerializable
+    public class PlayerNetworkModel : IDarkRiftSerializable
     {
-        public ushort ID;
+        //public ushort ID;
+        public NetworkIdentity networkID;
         public string playerName;
         public bool isReady;
 
-        public Player() { }
-        public Player(ushort ID, string playerName)
+        public PlayerNetworkModel() { }
+        public PlayerNetworkModel(ushort ID, string playerName)
         {
-            this.ID = ID;
+            //this.ID = ID;
+            networkID = new NetworkIdentity(ID);
             this.playerName = playerName;
         }
         public void Deserialize(DeserializeEvent e)
         {
-            ID = e.Reader.ReadUInt16();
+            //ID = e.Reader.ReadUInt16();
+            networkID.Deserialize(e);
             playerName = e.Reader.ReadString();
         }
 
         public void Serialize(SerializeEvent e)
         {
-            e.Writer.Write(ID);
+            networkID.Serialize(e);
             e.Writer.Write(playerName);
         }
+    }
+    public class PlayerBaseModel : IDarkRiftSerializable
+    {
+        public int currentGold;
+        public void Deserialize(DeserializeEvent e)
+        {
+            currentGold = e.Reader.ReadInt32();
+        }
+
+        public void Serialize(SerializeEvent e)
+        {
+            e.Writer.Write(currentGold);
+        }
+    }
+    public class BattleUnitModel : IDarkRiftSerializable
+    {
+        public enum UnitType { Infantry,Knight,WaterMage}
+        public UnitType unitType;
+        public void Deserialize(DeserializeEvent e)
+        {
+            unitType = (UnitType) e.Reader.ReadUInt16();
+        }
+
+        public void Serialize(SerializeEvent e)
+        {
+            e.Writer.Write((ushort)unitType);
+        }
+    }
+}
+public class NetworkIdentity : IDarkRiftSerializable, IComparable<NetworkIdentity>
+{
+    public ushort ID { get; private set; }
+    private static ushort counter;
+    static NetworkIdentity()
+    {
+        counter = 100; // start IDs from 100 
+    }
+    public void GenerateID()
+    {
+        ID = counter++;
+    }
+    public NetworkIdentity() { }        
+    public NetworkIdentity(ushort ID)
+    {
+        this.ID = ID;
+    }
+
+    public void Deserialize(DeserializeEvent e)
+    {
+        ID = e.Reader.ReadUInt16();
+    }
+
+    public void Serialize(SerializeEvent e)
+    {
+        e.Writer.Write(ID);
+    }
+
+    public int CompareTo(NetworkIdentity other)
+    {
+        if (other.ID == this.ID) return 0;
+        else return -1;
     }
 }
