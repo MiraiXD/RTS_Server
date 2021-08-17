@@ -55,17 +55,17 @@ namespace MultiplayerPlugin
                 // returns false when server is being terminated
             }
         }
-        public void SendWorldUpdate(Messages.Server.WorldUpdate worldUpdateMessage)
-        {
-            using(DarkRiftWriter writer = DarkRiftWriter.Create())
-            {
-                writer.Write(worldUpdateMessage);
-                using(Message message = Message.Create(Messages.Server.WorldUpdate.Tag, writer))
-                {
-                    SendToAll(message, SendMode.Unreliable);
-                }
-            }
-        }
+        //public void SendWorldUpdate(Messages.Server.WorldUpdate worldUpdateMessage)
+        //{
+        //    using(DarkRiftWriter writer = DarkRiftWriter.Create())
+        //    {
+        //        writer.Write(worldUpdateMessage);
+        //        using(Message message = Message.Create(Messages.Server.WorldUpdate.Tag, writer))
+        //        {
+        //            SendToAll(message, SendMode.Unreliable);
+        //        }
+        //    }
+        //}
         private void OnPlayerSpawnUnitMessage(Message message, MessageReceivedEventArgs e)
         {
             using (DarkRiftReader reader = message.GetReader()) {
@@ -75,21 +75,21 @@ namespace MultiplayerPlugin
                 gameManager.OnPlayerSpawnUnit(callingPlayerID, unitType);
             }
         }
-        public void SendPlayerSpawnUnit(BattleUnit unit)
-        {
-            Messages.Server.SpawnUnit message = new Messages.Server.SpawnUnit();
-            message.owningPlayerID = unit.owningPlayerID;
-            message.unitID = unit.ID;
-            message.unitModel = unit.model;
-            using (DarkRiftWriter writer = DarkRiftWriter.Create())
-            {
-                writer.Write(message);
-                using(Message m = Message.Create(Messages.Server.SpawnUnit.Tag, writer))
-                {
-                    SendToAll(m, SendMode.Reliable);
-                }
-            }
-        }
+        //public void SendPlayerSpawnUnit(BattleUnit unit)
+        //{
+        //    Messages.Server.SpawnUnit message = new Messages.Server.SpawnUnit();
+        //    message.owningPlayerID = unit.owningPlayerID;
+        //    message.unitID = unit.ID;
+        //    message.unitModel = unit.model;
+        //    using (DarkRiftWriter writer = DarkRiftWriter.Create())
+        //    {
+        //        writer.Write(message);
+        //        using(Message m = Message.Create(Messages.Server.SpawnUnit.Tag, writer))
+        //        {
+        //            SendToAll(m, SendMode.Reliable);
+        //        }
+        //    }
+        //}
 
         private void OnPlayerReadyToStartGameMessage(Message message, MessageReceivedEventArgs e)
         {
@@ -109,86 +109,48 @@ namespace MultiplayerPlugin
 
             if (allReady)
             {
-                gameManager = new GameManager(this, players.Values.ToArray());
-
-                using (DarkRiftWriter writer = DarkRiftWriter.Create())
-                {
-                    writer.Write(new Messages.Server.StartGame());
-                    using (Message m = Message.Create(Messages.Server.StartGame.Tag, writer))
-                    {
-                        foreach (IClient client in ClientManager.GetAllClients())
-                        {
-                            client.SendMessage(m, SendMode.Reliable);
-                        }
-                    }
-                }
-                gameManager.StartGame();
+                gameManager = new GameManager(this, players.Values.ToArray(), map);                
+                //SendStartGame();
+                //gameManager.StartGame();
             }
-        }
-        //private Thread worldUpdateThread;
-        //private Messages.Server.WorldUpdate worldUpdateMessage;        
-        //bool updateWorld = false;
-        //float networkDeltaTime;
-        //DateTime lastWorldUpdateTime;
-        //DateTime serverStartTime;
-
-        //Grid grid;
-        //System.Diagnostics.Stopwatch w;
-        //void StartUpdating()
+        }      
+        //public void SendWorldInfo(Messages.Server.WorldInfo worldInfoMessage)
         //{
-        //    grid = Grid.CreateGridWithLateralAndDiagonalConnections(new GridSize(130, 130), new Size(Distance.FromMeters(1.5f), Distance.FromMeters(1.5f)), Velocity.FromMetersPerSecond(1f));
-        //    w = new Stopwatch();
-
-        //    worldUpdateMessage = new Messages.Server.WorldUpdate();
-        //    worldUpdateMessage.timeSinceStartup = 0f;
-        //    worldUpdateMessage.x = 250f;
-        //    worldUpdateMessage.z = 250f;
-        //    updateWorld = true;
-        //    serverStartTime = DateTime.Now;
-        //    lastWorldUpdateTime = DateTime.Now;
-        //    networkDeltaTime = (float)DateTime.Now.Subtract(lastWorldUpdateTime).TotalSeconds;
-        //    worldUpdateThread = new Thread(HandleWorldUpdate);
-        //    worldUpdateThread.Start();           
-        //}
-        //void UpdateWorld(float deltaTime)
-        //{
-        //    w.Restart();
-        //    Parallel.For(0, 50, (index) => 
+        //    using(DarkRiftWriter writer = DarkRiftWriter.Create())
         //    {
-        //        PathFinder f = new PathFinder();
-        //        f.FindPath(new GridPosition(0, 0), new GridPosition(129, 129), grid);
-        //    });
-        //    w.Stop();
-        //    worldUpdateMessage.timeSinceStartup = w.ElapsedMilliseconds;
-        //    //worldUpdateMessage.timeSinceStartup = DateTime.Now.Subtract(serverStartTime).TotalSeconds;
-            
-        //    worldUpdateMessage.x += 1f * deltaTime;
-        //}
-        //void HandleWorldUpdate()
-        //{
-        //    while (updateWorld)
-        //    {
-        //        UpdateWorld(networkDeltaTime);
-
-        //        using (DarkRiftWriter writer = DarkRiftWriter.Create())
+        //        writer.Write(worldInfoMessage);
+        //        using(Message m = Message.Create(Messages.Server.WorldInfo.Tag, writer))
         //        {
-        //            writer.Write(worldUpdateMessage);
-        //            //Message m;
-        //            //m.Serialize(writer); TO DO/CHECK
-        //            using (Message message = Message.Create(Messages.Server.WorldUpdate.Tag, writer))
-        //            {
-        //                foreach (IClient client in ClientManager.GetAllClients())
-        //                {
-        //                    client.SendMessage(message, SendMode.Unreliable);
-        //                }
-        //            }
+        //            SendToAll(m, SendMode.Reliable);
         //        }
-        //        networkDeltaTime = (float)DateTime.Now.Subtract(lastWorldUpdateTime).TotalSeconds;
-        //        lastWorldUpdateTime = DateTime.Now;
-
-        //        Thread.Sleep(50);
+        //    }
+        //}        
+        //public void SendStartGame()
+        //{
+        //    using (DarkRiftWriter writer = DarkRiftWriter.Create())
+        //    {
+        //        writer.Write(new Messages.Server.StartGame());
+        //        using (Message m = Message.Create(Messages.Server.StartGame.Tag, writer))
+        //        {
+        //            SendToAll(m, SendMode.Reliable);
+        //        }
         //    }
         //}
+        public void SendMessageToAll(IDarkRiftSerializable message, ushort tag, SendMode sendMode)
+        {
+            using (DarkRiftWriter writer = DarkRiftWriter.Create())
+            {
+                writer.Write<IDarkRiftSerializable>(message);
+                using (Message m = Message.Create(tag, writer))
+                {
+                    SendToAll(m, sendMode);
+                }
+            }
+        }
+        private void SendToAll(Message message, SendMode sendMode)
+        {
+            foreach (var client in ClientManager.GetAllClients()) client.SendMessage(message, sendMode);
+        }
         void OnShutdown()
         {
             Environment.Exit(1);
@@ -321,9 +283,6 @@ namespace MultiplayerPlugin
 
             UpdatePlayFabPlayers();
         }
-        private void SendToAll(Message message, SendMode sendMode)
-        {
-            foreach (var client in ClientManager.GetAllClients()) client.SendMessage(message, sendMode);
-        }
+        
     }
 }
