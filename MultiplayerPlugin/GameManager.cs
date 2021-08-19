@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Diagnostics;
 using Roy_T.AStar.Grids;
-using Roy_T.AStar.Paths;
 using Roy_T.AStar.Primitives;
 using System.IO;
 namespace MultiplayerPlugin
@@ -14,41 +14,55 @@ namespace MultiplayerPlugin
         private NetworkManager networkManager;
         private GameWorld gameWorld;
         private UnitManager unitManager;
+        private NavGrid navGrid;
+        private Pathfinding pathfinding;
+        public static GameData gameData;
         //private Dictionary<ushort, Entities.PlayerBaseModel> players;
 
         private Thread worldUpdateThread;
         private bool updateWorld;
+        private Thread pathfindingThread;
+        private bool keepPathfinding;
+        
         private float networkDeltaTime;
         private DateTime lastWorldUpdateTime;
         private DateTime gameStartTime;
         private Stopwatch stopwatch;
 
         private string mapName;
-        private Grid grid;
-        public GameManager(NetworkManager networkManager, Entities.PlayerNetworkModel[] networkedPlayers, string mapName)
+        
+        public GameManager(NetworkManager networkManager, NetworkedPlayer[] networkedPlayers, string mapName)
         {
             worldUpdateThread = null;
             updateWorld = false;
+            pathfindingThread = null;
+            keepPathfinding = false;
             this.networkManager = networkManager;
 
-            this.mapName = mapName;
-            grid = CreateGrid(mapName + ".txt");
+            this.mapName = mapName;            
 
             unitManager = new UnitManager();
-            gameWorld = new GameWorld(unitManager);
+            gameWorld = new GameWorld();
+            navGrid = new NavGrid(mapName+".txt");
+            pathfinding = new Pathfinding(navGrid);
 
-            
+            gameData = new Default2v2();
 
             Messages.Server.WorldInfo worldInfoMessage = new Messages.Server.WorldInfo();
 
             gameWorld.CreatePlayerBases(networkedPlayers);
             worldInfoMessage.models_Count = networkedPlayers.Length;
-            worldInfoMessage.playerModels = new Entities.PlayerNetworkModel[networkedPlayers.Length];
+            worldInfoMessage.playerIDs = new NetworkIdentity[networkedPlayers.Length];
+            worldInfoMessage.playerModels = new Entities.NetworkedPlayerModel[networkedPlayers.Length];
+            worldInfoMessage.baseIDs = new NetworkIdentity[networkedPlayers.Length];
             worldInfoMessage.baseModels = new Entities.PlayerBaseModel[networkedPlayers.Length];
             for (int i = 0; i < networkedPlayers.Length; i++)
             {
-                worldInfoMessage.playerModels[i] = networkedPlayers[i];
-                worldInfoMessage.baseModels[i] = gameWorld.GetPlayerBase(networkedPlayers[i].networkID.ID).model;
+                worldInfoMessage.playerIDs[i] = networkedPlayers[i].networkID;
+                worldInfoMessage.playerModels[i] = networkedPlayers[i].model;
+                PlayerBase playerBase = gameWorld.GetPlayerBase(networkedPlayers[i].networkID.ID);
+                worldInfoMessage.baseIDs[i] = playerBase.networkID;
+                worldInfoMessage.baseModels[i] = playerBase.model;
             }
 
             //gameWorld.CreateResources();
@@ -62,77 +76,48 @@ namespace MultiplayerPlugin
             StartGame();
         }
 
-        private Grid CreateGrid(string pathToTxt)
-        {
-            using (StreamReader reader = File.OpenText(pathToTxt))
-            {
-                string line = reader.ReadLine();
-                string widthString = line.Split('=')[1].Trim();
-                int width = int.Parse(widthString);
-
-                line = reader.ReadLine();
-                string heightString = line.Split('=')[1].Trim();
-                int height = int.Parse(heightString);
-
-                line = reader.ReadLine();
-                string cellSizeXString = line.Split('=')[1].Trim();
-                float cellSizeX = float.Parse(cellSizeXString);
-
-                line = reader.ReadLine();
-                string cellSizeYString = line.Split('=')[1].Trim();
-                float cellSizeY = float.Parse(cellSizeYString);
-
-                Grid grid = Grid.CreateGridWithLateralAndDiagonalConnections(new GridSize(width, height), new Size(Distance.FromMeters(cellSizeX), Distance.FromMeters(cellSizeY)), Velocity.FromMetersPerSecond(1f));
-
-                line = reader.ReadLine();
-                string walkableNodesLengthString = line.Split('=')[1].Trim();
-                int walkableNodesLength = int.Parse(walkableNodesLengthString);
-
-                for(int i=0; i<walkableNodesLength;i++)
-                {
-                    reader.ReadLine();
-                }
-
-                line = reader.ReadLine();
-                string obstaclesLengthString = line.Split('=')[1].Trim();
-                int obstaclesLength = int.Parse(obstaclesLengthString);
-
-                for(int i=0; i<obstaclesLength;i++)
-                {
-                    line = reader.ReadLine();
-                    var coordsString = line.Split(':');
-                    int coordX = int.Parse(coordsString[0].Trim());
-                    int coordY = int.Parse(coordsString[1].Trim());
-                    GridPosition obstaclePosition = new GridPosition(coordX, coordY);
-                    grid.DisconnectNode(obstaclePosition);
-                }
-
-                return grid;
-            }                        
-        }
+        
 
         public void StartGame()
         {
             gameStartTime = DateTime.Now;
             lastWorldUpdateTime = DateTime.Now;
             networkDeltaTime = (float)DateTime.Now.Subtract(lastWorldUpdateTime).TotalSeconds;
-            updateWorld = true;
             stopwatch = new Stopwatch();
+
+            updateWorld = true;            
             worldUpdateThread = new Thread(HandleWorldUpdate);
             worldUpdateThread.Start();
+
+            //keepPathfinding = true;
+            //pathfindingThread = new Thread(HandlePathfinding);
+            //pathfindingThread.Start();
         }
+        //void HandlePathfinding()
+        //{
+        //    while(keepPathfinding)
+        //    {
+        //        pathfinding.FindAllPathsParallel();
+
+        //        Thread.Sleep(50);
+        //    }
+        //}
         void HandleWorldUpdate()
         {
             while (updateWorld)
             {
-                stopwatch.Restart();
-                Messages.Server.WorldUpdate worldUpdateMessage = gameWorld.Update(networkDeltaTime);
-                worldUpdateMessage.timeSinceStartup = (float)DateTime.Now.Subtract(gameStartTime).TotalSeconds;
-                stopwatch.Stop();
+                //stopwatch.Restart();
+                pathfinding.FindAllPathsParallel();
+                unitManager.UpdateUnits(networkDeltaTime);
+                if (gameWorld.HasUpdate())
+                {
+                    Messages.Server.WorldUpdate worldUpdateMessage = gameWorld.GetUpdateMessage();
+                    worldUpdateMessage.timeSinceStartup = (float)DateTime.Now.Subtract(gameStartTime).TotalSeconds;
+                    //stopwatch.Stop();
 
-                //networkManager.SendWorldUpdate(worldUpdateMessage);
-                networkManager.SendMessageToAll(worldUpdateMessage, Messages.Server.WorldUpdate.Tag, DarkRift.SendMode.Unreliable);
-
+                    networkManager.SendMessageToAll(worldUpdateMessage, Messages.Server.WorldUpdate.Tag, DarkRift.SendMode.Unreliable);
+                    gameWorld.ClearChanges();
+                }
                 networkDeltaTime = (float)DateTime.Now.Subtract(lastWorldUpdateTime).TotalSeconds;
                 lastWorldUpdateTime = DateTime.Now;
 
@@ -143,13 +128,25 @@ namespace MultiplayerPlugin
         {
             PlayerBase playerBase = gameWorld.GetPlayerBase(callingPlayerID.ID);
             // check cost
-            var unit = unitManager.CreateUnitWithPlayerAuthority(callingPlayerID, unitType);
+            BattleUnit unit = unitManager.CreateUnitWithPlayerAuthority(callingPlayerID, unitType);
+            unit.InitPathfinding(navGrid, pathfinding, navGrid.grid.GetNode(new GridPosition(5, 5)));
+            unit.InitWorldChanges(gameWorld);
+
             Messages.Server.SpawnUnit spawnUnitMessage = new Messages.Server.SpawnUnit();
             spawnUnitMessage.owningPlayerID = unit.owningPlayerID;
-            spawnUnitMessage.unitID = unit.ID;
+            spawnUnitMessage.unitID = unit.networkID;
             spawnUnitMessage.unitModel = unit.model;
             //networkManager.SendPlayerSpawnUnit(unit);
             networkManager.SendMessageToAll(spawnUnitMessage, Messages.Server.SpawnUnit.Tag, DarkRift.SendMode.Reliable);
+        }
+        public void OnPlayerMoveUnit(NetworkIdentity callingPlayerID, Messages.Client.MoveUnit message)
+        {
+            BattleUnit unit = unitManager.GetUnit(message.unitID.ID);
+            if(unit.owningPlayerID.ID == callingPlayerID.ID)
+            {
+                Console.WriteLine(navGrid.GetNodeCenterWorld( navGrid.grid.GetNode(new GridPosition(message.nodeXCoord, message.nodeYCoord))).ToString());
+                unit.SetDestination(navGrid.grid.GetNode(new GridPosition(message.nodeXCoord, message.nodeYCoord)));
+            }
         }
     }
 }
