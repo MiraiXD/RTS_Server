@@ -40,24 +40,39 @@ public class Messages
                 e.Writer.Write((ushort)unitType);
             }
         }
-        public class MoveUnit : IDarkRiftSerializable
+        public class MoveUnits : IDarkRiftSerializable
         {
             public const ushort Tag = 1005;
-            public NetworkIdentity unitID;
-            public int nodeXCoord;
-            public int nodeYCoord;
+            public ushort unitsCount;
+            public NetworkIdentity[] unitIDs;
+            public float worldPositionX;
+            public float worldPositionY;
+            public float worldPositionZ;
+
             public void Deserialize(DeserializeEvent e)
             {
-                unitID = e.Reader.ReadSerializable<NetworkIdentity>();
-                nodeXCoord = e.Reader.ReadInt32();
-                nodeYCoord = e.Reader.ReadInt32();
+                unitsCount = e.Reader.ReadUInt16();
+                unitIDs = new NetworkIdentity[unitsCount];
+
+                for (int i = 0; i < unitsCount; i++)
+                {
+                    unitIDs[i] = e.Reader.ReadSerializable<NetworkIdentity>();
+                }
+                worldPositionX = e.Reader.ReadSingle();
+                worldPositionY = e.Reader.ReadSingle();
+                worldPositionZ = e.Reader.ReadSingle();
             }
 
             public void Serialize(SerializeEvent e)
             {
-                e.Writer.Write(unitID);
-                e.Writer.Write(nodeXCoord);
-                e.Writer.Write(nodeYCoord);
+                e.Writer.Write(unitsCount);
+                for (int i = 0; i < unitsCount; i++)
+                {
+                    e.Writer.Write(unitIDs[i]);
+                }
+                e.Writer.Write(worldPositionX);
+                e.Writer.Write(worldPositionY);
+                e.Writer.Write(worldPositionZ);
             }
         }
 
@@ -91,19 +106,54 @@ public class Messages
             {
                 e.Writer.Write(timeSinceStartup);
                 e.Writer.Write(changeCount);
-                for (int i=0; i<changeCount;i++)
+                for (int i = 0; i < changeCount; i++)
                 {
                     e.Writer.Write(IDs[i]);
                     e.Writer.Write(changes[i]);
                 }
-                
+
             }
         }
+        //public class StartGame : IDarkRiftSerializable
+        //{
+        //    public const ushort Tag = 1104;
+        //    public void Deserialize(DeserializeEvent e) { }
+        //    public void Serialize(SerializeEvent e) { }
+        //}
         public class StartGame : IDarkRiftSerializable
         {
             public const ushort Tag = 1104;
-            public void Deserialize(DeserializeEvent e) { }
-            public void Serialize(SerializeEvent e) { }
+            public int length;
+            public Vector3[] vertices;
+            public int[] triangles;
+            public void Deserialize(DeserializeEvent e)
+            {
+                length = e.Reader.ReadInt32();
+                vertices = new Vector3[length];
+                triangles = new int[length];
+                for (int i = 0; i < length; i++)
+                {
+                    vertices[i] = new Vector3(e.Reader.ReadSingle(), e.Reader.ReadSingle(), e.Reader.ReadSingle());
+                }
+                for (int i = 0; i < length; i++)
+                {
+                    triangles[i] = e.Reader.ReadInt32();
+                }
+            }
+            public void Serialize(SerializeEvent e)
+            {
+                e.Writer.Write(length);
+                for (int i = 0; i < length; i++)
+                {
+                    e.Writer.Write(vertices[i].x);
+                    e.Writer.Write(vertices[i].y);
+                    e.Writer.Write(vertices[i].z);
+                }
+                for (int i = 0; i < length; i++)
+                {
+                    e.Writer.Write(triangles[i]);                    
+                }
+            }
         }
         public class LoadMap : IDarkRiftSerializable
         {
@@ -498,7 +548,7 @@ public class NumericComponent3<T> where T : IComparable<T>
         _secondValue = second;
         _thirdValue = third;
     }
-    public Action<T,T,T> onChanged;
+    public Action<T, T, T> onChanged;
     public NumericComponent3(T startFirstValue, T startSecondValue, T startThirdValue)
     {
         _firstValue = startFirstValue;
@@ -508,7 +558,7 @@ public class NumericComponent3<T> where T : IComparable<T>
 }
 public enum Region { South, West, North, East, SouthWest, SouthEast, NorthEast, NorthWest }
 public class SingleWorldChange : IDarkRiftSerializable
-{    
+{
     public float xPos, yPos, zPos;
     public int currentHealth;
 

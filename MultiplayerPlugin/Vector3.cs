@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 
-public partial struct Vector3 : IEquatable<Vector3>, IFormattable
+public struct Vector3 : IEquatable<Vector3>, IFormattable
 {
     // *Undocumented*
     public const float kEpsilon = 0.00001F;

@@ -1,20 +1,22 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
 namespace MultiplayerPlugin
 {
-    public class UnitManager
+    public static class UnitManager
     {
-        private Dictionary<ushort, BattleUnit> unitsByID;
-        private List<BattleUnit> unitsList;
-        public BattleUnit GetUnit(ushort ID) => unitsByID[ID];
-        public UnitManager()
+        private static Dictionary<ushort, BattleUnit> unitsByID;
+        private static List<BattleUnit> unitsList;
+        //private ConcurrentBag<BattleUnit> unitsList;
+        public static BattleUnit GetUnit(ushort ID) => unitsByID[ID];
+        static UnitManager()
         {
             unitsByID = new Dictionary<ushort, BattleUnit>();
             unitsList = new List<BattleUnit>();
         }
-        public void UpdateUnits(float deltaTime)
+        public static void UpdateUnits(float deltaTime)
         {
             foreach (var unit in unitsList)
             {
@@ -22,7 +24,7 @@ namespace MultiplayerPlugin
             }
         }
 
-        public BattleUnit CreateUnitWithPlayerAuthority(NetworkIdentity owningPlayerID, Entities.BattleUnitModel.UnitType unitType)
+        public static BattleUnit CreateUnitWithPlayerAuthority(NetworkIdentity owningPlayerID, Entities.BattleUnitModel.UnitType unitType)
         {
             BattleUnit unit;
             string keyword;

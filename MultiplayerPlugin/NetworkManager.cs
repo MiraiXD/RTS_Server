@@ -30,7 +30,7 @@ namespace MultiplayerPlugin
         private GameManager gameManager;
            
         public NetworkManager(PluginLoadData pluginLoadData) : base(pluginLoadData)
-        {
+        {        
             players = new Dictionary<ushort, NetworkedPlayer>();
             ClientManager.ClientConnected += ClientConnected;
             ClientManager.ClientDisconnected += ClientDisconnected;
@@ -43,7 +43,7 @@ namespace MultiplayerPlugin
             clientMessage_Actions.Add(Messages.Client.Hello.Tag, OnPlayerHelloMessage);
             clientMessage_Actions.Add(Messages.Client.ReadyToStartGame.Tag, OnPlayerReadyToStartGameMessage);
             clientMessage_Actions.Add(Messages.Client.SpawnUnit.Tag, OnPlayerSpawnUnitMessage);
-            clientMessage_Actions.Add(Messages.Client.MoveUnit.Tag, OnPlayerMoveUnitMessage);
+            clientMessage_Actions.Add(Messages.Client.MoveUnits.Tag, OnPlayerMoveUnitMessage);
 
             // Connect to PlayFab agent
             GameserverSDK.Start();
@@ -54,30 +54,19 @@ namespace MultiplayerPlugin
             else
             {
                 // returns false when server is being terminated
-            }
+            }            
+            //gameManager = new GameManager(this, players.Values.ToArray(), map);
         }
 
         private void OnPlayerMoveUnitMessage(Message message, MessageReceivedEventArgs e)
         {
             using (DarkRiftReader reader = message.GetReader())
             {
-                Messages.Client.MoveUnit clientMessage = reader.ReadSerializable<Messages.Client.MoveUnit>();
+                Messages.Client.MoveUnits clientMessage = reader.ReadSerializable<Messages.Client.MoveUnits>();
                 NetworkIdentity callingPlayerID = players[e.Client.ID].networkID;                
-                gameManager.OnPlayerMoveUnit(callingPlayerID, clientMessage);
+                gameManager.OnPlayerMoveUnits(callingPlayerID, clientMessage);
             }
         }
-
-        //public void SendWorldUpdate(Messages.Server.WorldUpdate worldUpdateMessage)
-        //{
-        //    using(DarkRiftWriter writer = DarkRiftWriter.Create())
-        //    {
-        //        writer.Write(worldUpdateMessage);
-        //        using(Message message = Message.Create(Messages.Server.WorldUpdate.Tag, writer))
-        //        {
-        //            SendToAll(message, SendMode.Unreliable);
-        //        }
-        //    }
-        //}
         private void OnPlayerSpawnUnitMessage(Message message, MessageReceivedEventArgs e)
         {
             using (DarkRiftReader reader = message.GetReader()) {
@@ -105,11 +94,57 @@ namespace MultiplayerPlugin
 
             if (allReady)
             {
-                gameManager = new GameManager(this, players.Values.ToArray(), map);                
-                //SendStartGame();
-                //gameManager.StartGame();
+                gameManager = new GameManager(this, players.Values.ToArray(), map);                              
             }
-        }          
+        }
+        private void OnPlayerHelloMessage(Message playerMessage, MessageReceivedEventArgs e)
+        {
+            using (DarkRiftReader reader = playerMessage.GetReader())
+            {
+                Messages.Client.Hello helloMessage = reader.ReadSerializable<Messages.Client.Hello>();
+                string playerName = helloMessage.playerName;
+
+                //Entities.NetworkedPlayerModel newPlayer = new Entities.NetworkedPlayerModel(e.Client.ID, playerName);
+                NetworkedPlayer newPlayer = new NetworkedPlayer(e.Client.ID, playerName);
+                players.Add(e.Client.ID, newPlayer);
+
+                using (DarkRiftWriter writer = DarkRiftWriter.Create())
+                {
+                    Messages.Server.ConnectedPlayers message = new Messages.Server.ConnectedPlayers();
+                    message.maxPlayers = maxPlayers;
+                    message.connectedPlayers_Size = players.Count;
+                    message.IDs = new NetworkIdentity[message.connectedPlayers_Size];
+                    message.connectedPlayers = new Entities.NetworkedPlayerModel[message.connectedPlayers_Size];
+                    int i = 0;
+                    foreach (var p in players.Values)
+                    {
+                        message.IDs[i] = p.networkID;
+                        message.connectedPlayers[i] = p.model;
+                        i++;
+                    }
+
+                    writer.Write(message);
+                    using (Message serverMessage = Message.Create(Messages.Server.ConnectedPlayers.Tag, writer))
+                    {
+                        SendToAll(serverMessage, SendMode.Reliable);
+                    }
+                }
+                Thread.Sleep(100);
+                using (DarkRiftWriter writer = DarkRiftWriter.Create())
+                {
+                    Messages.Server.LoadMap message = new Messages.Server.LoadMap();
+                    message.mapName = map;
+                    writer.Write(message);
+                    using (Message serverMessage = Message.Create(Messages.Server.LoadMap.Tag, writer))
+                    {
+                        e.Client.SendMessage(serverMessage, SendMode.Reliable);
+                    }
+                }
+            }
+
+
+            UpdatePlayFabPlayers();
+        }
         public void SendMessageToAll(IDarkRiftSerializable message, ushort tag, SendMode sendMode)
         {
             using (DarkRiftWriter writer = DarkRiftWriter.Create())
@@ -214,54 +249,7 @@ namespace MultiplayerPlugin
                 }
             }
         }
-        void OnPlayerHelloMessage(Message playerMessage, MessageReceivedEventArgs e)
-        {
-            using (DarkRiftReader reader = playerMessage.GetReader())
-            {
-                Messages.Client.Hello helloMessage = reader.ReadSerializable<Messages.Client.Hello>();
-                string playerName = helloMessage.playerName;
-
-                //Entities.NetworkedPlayerModel newPlayer = new Entities.NetworkedPlayerModel(e.Client.ID, playerName);
-                NetworkedPlayer newPlayer = new NetworkedPlayer(e.Client.ID, playerName);
-                players.Add(e.Client.ID, newPlayer);
-
-                using (DarkRiftWriter writer = DarkRiftWriter.Create())
-                {
-                    Messages.Server.ConnectedPlayers message = new Messages.Server.ConnectedPlayers();
-                    message.maxPlayers = maxPlayers;
-                    message.connectedPlayers_Size = players.Count;
-                    message.IDs = new NetworkIdentity[message.connectedPlayers_Size];
-                    message.connectedPlayers = new Entities.NetworkedPlayerModel[message.connectedPlayers_Size];
-                    int i = 0;
-                    foreach (var p in players.Values)
-                    {
-                        message.IDs[i] = p.networkID;
-                        message.connectedPlayers[i] = p.model;
-                        i++;
-                    }
-
-                    writer.Write(message);
-                    using (Message serverMessage = Message.Create(Messages.Server.ConnectedPlayers.Tag, writer))
-                    {
-                        SendToAll(serverMessage, SendMode.Reliable);                        
-                    }
-                }
-                Thread.Sleep(100);
-                using (DarkRiftWriter writer = DarkRiftWriter.Create())
-                {
-                    Messages.Server.LoadMap message = new Messages.Server.LoadMap();
-                    message.mapName = map;
-                    writer.Write(message);
-                    using (Message serverMessage = Message.Create(Messages.Server.LoadMap.Tag, writer))
-                    {
-                        e.Client.SendMessage(serverMessage, SendMode.Reliable);
-                    }
-                }
-            }
-
-
-            UpdatePlayFabPlayers();
-        }
+        
         
     }
 }

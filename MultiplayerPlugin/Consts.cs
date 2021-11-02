@@ -94,7 +94,7 @@ namespace MultiplayerPlugin
             unit_knight.Add(START_VALUE + ARMOR_PER_LEVEL, 10f);
             unit_knight.Add(START_VALUE + MAGIC_RESIST, 50f);
             unit_knight.Add(START_VALUE + MAGIC_RESIST_PER_LEVEL, 10f);
-            unit_knight.Add(START_VALUE + MOVEMENT_SPEED,2f);
+            unit_knight.Add(START_VALUE + MOVEMENT_SPEED,5f);
             unit_knight.Add(START_VALUE + CRIT_CHANCE, 0f);
             unit_knight.Add(START_VALUE + ATTACK_RANGE, 1);
             unit_knight.Add(START_VALUE + COOLDOWN_REDUCTION, 0f);

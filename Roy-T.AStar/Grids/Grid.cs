@@ -185,7 +185,29 @@ namespace Roy_T.AStar.Grids
 
             return list;
         }
+        public void DisableEnteringNode(INode node)
+        {
+            foreach (var incomingEdge in node.Incoming)
+            {
+                var opposite = incomingEdge.Start;
+                opposite.Outgoing.Remove(incomingEdge);
+            }
 
+            node.Incoming.Clear();
+        }
+        public void EnableEnteringNode(INode node, Velocity traversalVelocity)
+        {
+            if (node.Incoming.Count != 0) { Console.WriteLine("Incoming not empty!"); return; }
+            if (node.Outgoing.Count == 0) { Console.WriteLine(" Outgoing is empty!"); return; }
+
+            foreach (var outgoingEdge in node.Outgoing)
+            {
+                var opposite = outgoingEdge.End;
+                var edge = new Edge(opposite, node, traversalVelocity);
+                opposite.Outgoing.Add(edge);
+                node.Incoming.Add(edge);
+            }
+        }
         public void DisconnectNode(GridPosition position)
         {
             var node = this.Nodes[position.X, position.Y];
