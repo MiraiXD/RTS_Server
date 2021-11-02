@@ -1,0 +1,34 @@
+[Trace]   DarkRiftServer        System Details:
+                                	OS: Microsoft Windows NT 6.2.9200.0
+                                	CLS Version: 4.0.30319.42000
+                                	DarkRift: 2.10.1.0 - Free
+[Trace]   PluginFactory         Created plugin 'NetworkManager'.
+[Trace]   PluginManager         Plugin 'NetworkManager' has requested that DarkRift operates in thread safe mode.
+[Trace]   DarkRiftServer        Switched into thread safe mode. All events will be invoked from the main thread. This may affect server performance.
+[Info]    PluginManager         Loaded plugin NetworkManager version 1.0.0
+[Trace]   PluginFactory         Created plugin 'BichannelListener'.
+[Trace]   HttpHealthCheck       HTTP health check started at 'http://localhost:10666/health'
+[Trace]   DarkRiftServer        Binding listeners to ClientManager as server is externally visible.
+[Trace]   DefaultNetworkListener Starting bichannel listener.
+[Info]    DefaultNetworkListener Server mounted, listening on port 4296.
+[Trace]   DefaultNetworkListener Accepted TCP connection from 127.0.0.1:52985.
+[Trace]   DefaultNetworkListener Accepted UDP connection from 127.0.0.1:57962.
+[Info]    ClientManager         New client [0] connected [127.0.0.1:52985|127.0.0.1:57962].
+[Trace]   DefaultNetworkListener Accepted TCP connection from 127.0.0.1:52988.
+[Trace]   DefaultNetworkListener Accepted UDP connection from 127.0.0.1:62152.
+[Info]    ClientManager         New client [1] connected [127.0.0.1:52988|127.0.0.1:62152].
+[Error]   Client                A plugin encountered an error whilst handling the MessageReceived event.
+                                 System.IO.FileNotFoundException: Nie można odnaleźć pliku 'C:\UnityProjects\RTS_Server\MockVmAgent\PlayFabVmAgentOutput\2021-08-18T15-01-59\ExtAssets\SH0\A0\Default_4_players'.
+                                 Nazwa pliku: 'C:\UnityProjects\RTS_Server\MockVmAgent\PlayFabVmAgentOutput\2021-08-18T15-01-59\ExtAssets\SH0\A0\Default_4_players'
+                                    w System.IO.__Error.WinIOError(Int32 errorCode, String maybeFullPath)
+                                    w System.IO.FileStream.Init(String path, FileMode mode, FileAccess access, Int32 rights, Boolean useRights, FileShare share, Int32 bufferSize, FileOptions options, SECURITY_ATTRIBUTES secAttrs, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+                                    w System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+                                    w System.IO.StreamReader..ctor(String path, Encoding encoding, Boolean detectEncodingFromByteOrderMarks, Int32 bufferSize, Boolean checkHost)
+                                    w System.IO.StreamReader..ctor(String path)
+                                    w System.IO.File.OpenText(String path)
+                                    w MultiplayerPlugin.NavGrid.CreateGridFromFile(String pathToTxt)
+                                    w MultiplayerPlugin.NavGrid..ctor(String pathToGridFile)
+                                    w MultiplayerPlugin.GameManager..ctor(NetworkManager networkManager, PlayerNetworkModel[] networkedPlayers, String mapName)
+                                    w MultiplayerPlugin.NetworkManager.OnPlayerReadyToStartGameMessage(Message message, MessageReceivedEventArgs e)
+                                    w MultiplayerPlugin.NetworkManager.OnMessageReceived(Object sender, MessageReceivedEventArgs e)
+                                    w DarkRift.Server.Client.<>c__DisplayClass48_0.<HandleIncomingMessage>g__DoMessageReceived|0()

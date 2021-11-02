@@ -1,8 +1,8 @@
 {
     "RunContainer": false,
     "OutputFolder": "",
-    "NumHeartBeatsForActivateResponse": 3,
-    "NumHeartBeatsForTerminateResponse": 60,
+    "NumHeartBeatsForActivateResponse": 1,
+    "NumHeartBeatsForTerminateResponse": 600,
     "AgentListeningPort": 56001,
    "AssetDetails": [
         {

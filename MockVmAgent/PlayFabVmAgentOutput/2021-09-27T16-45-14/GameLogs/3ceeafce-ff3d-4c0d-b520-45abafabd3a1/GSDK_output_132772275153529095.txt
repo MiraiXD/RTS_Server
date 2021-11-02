@@ -1,0 +1,2 @@
+2021-09-27T14:45:15.3539088Z	VM Agent Endpoint: 127.0.0.1:56001
+2021-09-27T14:45:15.3539088Z	Instance Id: 3ceeafce-ff3d-4c0d-b520-45abafabd3a1
